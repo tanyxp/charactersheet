@@ -455,33 +455,34 @@ PersistenceService._setVersion = function(appVersion) {
 };
 
 PersistenceService._shouldApplyMigration = function(appVersion, dbVersion, migration) {
-    //It is already assumed that the dbVersion and appVersion are different.
-    //Check the simple case first.
-    if (appVersion === migration.version) {
-        return true;
-    }
-
     //LEGACY: The db has no version number.
     if (!dbVersion) {
-        return true;
+        dbVersion = '0.0.0';
     }
 
+    var appAndDBVerionsDiffer = PersistenceService._compareVersions(appVersion, dbVersion);
+    var migrationVersionHigherThanDB = PersistenceService._compareVersions(migration.version, dbVersion);
+    var migrationVersionLowerOrEqualApp = !PersistenceService._compareVersions(migration.version, appVersion);
+
+    return appAndDBVerionsDiffer && migrationVersionHigherThanDB && migrationVersionLowerOrEqualApp;
+};
+
+PersistenceService._compareVersions = function(version1, version2) {
     //Parse the versions.
-    var appVersionNumbers = appVersion.split('.').map(function(e, i, _) {
+    var version1Numbers = version1.split('.').map(function(e, i, _) {
         return parseInt(e);
     });
-    var dbVersionNumbers = dbVersion.split('.').map(function(e, i, _) {
+    var version2Numbers = version2.split('.').map(function(e, i, _) {
         return parseInt(e);
     });
 
-    //Compare versions
-    for (i in appVersionNumbers) {
-        try {
-            if (appVersionNumbers[i] > dbVersionNumbers[i]) {
-                return true;
-            }
-        } catch(err) {
-            //The db version has no index for the given index.
+    //If any part of version 1 is higher than any part of version 2, return true.
+    for (var i in version1Numbers) {
+        if (version2Numbers[i] === undefined) {
+            return true;
+        }
+
+        if (version1Numbers[i] > version2Numbers[i]) {
             return true;
         }
     }
