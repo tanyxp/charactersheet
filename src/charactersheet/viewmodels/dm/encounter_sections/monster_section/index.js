@@ -46,6 +46,7 @@ export function MonsterSectionViewModel(params) {
     self.previewTabStatus = ko.observable('active');
     self.editTabStatus = ko.observable('');
     self.shouldShowDisclaimer = ko.observable(false);
+    self.monsterWasEdited = ko.observable(false);
 
     self.sorts = {
         'name asc': { field: 'name', direction: 'asc' },
@@ -77,7 +78,7 @@ export function MonsterSectionViewModel(params) {
 
     self.save = function() {
         var key = CharacterManager.activeCharacter().key();
-        var section =  PersistenceService.findByPredicates(MonsterSection, [
+        var section = PersistenceService.findByPredicates(MonsterSection, [
             new KeyValuePredicate('encounterId', self.encounterId()),
             new KeyValuePredicate('characterId', key)
         ])[0];
@@ -98,7 +99,7 @@ export function MonsterSectionViewModel(params) {
 
     self.delete = function() {
         var key = CharacterManager.activeCharacter().key();
-        var section =  PersistenceService.findByPredicates(MonsterSection, [
+        var section = PersistenceService.findByPredicates(MonsterSection, [
             new KeyValuePredicate('encounterId', self.encounterId()),
             new KeyValuePredicate('characterId', key)
         ])[0];
@@ -144,7 +145,6 @@ export function MonsterSectionViewModel(params) {
         monster.abilityScores().forEach(function(score, idx, _) {
             score.encounterId(self.encounterId());
             score.monsterId(monster.monsterId());
-            score.save();
         });
 
         monster.save();
@@ -162,14 +162,13 @@ export function MonsterSectionViewModel(params) {
 
     self.editMonster = function(monster) {
         self.editItemIndex = monster.__id;
-        var editMonster = new Monster();
-        editMonster.importValues(monster.exportValues());
-        editMonster.abilityScores(monster.abilityScores().map(function(e, i, _) {
+        self.currentEditItem(new Monster());
+        self.currentEditItem().importValues(monster.exportValues());
+        self.currentEditItem().abilityScores(monster.abilityScores().map(function(e, i, _) {
             var abilityScore = new MonsterAbilityScore();
             abilityScore.importValues(e);
             return abilityScore;
         }));
-        self.currentEditItem(editMonster);
         self.openEditModal(true);
     };
 
@@ -232,7 +231,7 @@ export function MonsterSectionViewModel(params) {
         self.openModal(false);
         self.selectPreviewTab();
 
-        if (self.openEditModal()) {
+        if (self.openEditModal() && self.monsterWasEdited()) {
             var key = CharacterManager.activeCharacter().key();
             self.monsters().forEach(function(item, idx, _) {
                 if (item.__id === self.editItemIndex) {
@@ -249,9 +248,9 @@ export function MonsterSectionViewModel(params) {
                     );
                 }
             });
+            self.save();
         }
-
-        self.save();
+        self.monsterWasEdited(false);
         self.openEditModal(false);
     };
 
@@ -261,6 +260,7 @@ export function MonsterSectionViewModel(params) {
     };
 
     self.selectEditTab = function() {
+        self.monsterWasEdited(true);
         self.editTabStatus('active');
         self.previewTabStatus('');
         self.editFirstModalElementHasFocus(true);
@@ -270,7 +270,7 @@ export function MonsterSectionViewModel(params) {
 
     self._dataHasChanged = function() {
         var key = CharacterManager.activeCharacter().key();
-        var monster =  PersistenceService.findByPredicates(Monster, [
+        var monster = PersistenceService.findByPredicates(Monster, [
             new KeyValuePredicate('encounterId', self.encounterId()),
             new KeyValuePredicate('characterId', key)
         ]);
@@ -282,7 +282,7 @@ export function MonsterSectionViewModel(params) {
                 monster.abilityScores(abilityScores);
             });
         }
-        var section =  PersistenceService.findByPredicates(MonsterSection, [
+        var section = PersistenceService.findByPredicates(MonsterSection, [
             new KeyValuePredicate('encounterId', self.encounterId()),
             new KeyValuePredicate('characterId', key)
         ])[0];

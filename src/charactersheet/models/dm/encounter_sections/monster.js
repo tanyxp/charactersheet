@@ -88,6 +88,14 @@ export function Monster() {
     self.delete = function() {
         self.ps.delete();
     };
+
+    self.toString = function() {
+        var msg = "Ability Scores:\n";
+        self.abilityScores().forEach(function(score, i, _) {
+            msg += score.name() + ": " + score.value() + "\n";
+        })
+        return msg;
+    };
 }
 Monster.__name = 'Monster';
 
