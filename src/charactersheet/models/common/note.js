@@ -18,6 +18,7 @@ export class Note extends KOModel {
     contents = ko.observable('');
     headline = ko.observable('');
     type = ko.observable('');
+    createdAt = ko.observable(null);
 
     updateHeadline() {
         var text = '';
